@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MoreVertical, Users, Trash2, Edit, Zap, AlertTriangle } from 'lucide-react';
+import { MoreVertical, Users, Trash2, Edit, Zap, AlertTriangle, RefreshCw, Clock } from 'lucide-react';
 import { AdminAccount, MAX_TEAM_MEMBERS } from '@/types/admin';
 import { TeamCapacityBar } from './TeamCapacityBar';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 interface AdminCardProps {
   account: AdminAccount;
@@ -19,6 +21,8 @@ interface AdminCardProps {
   onDelete: (id: string) => void;
   onManageTeam: (account: AdminAccount) => void;
   onAutoDelete: (id: string) => void;
+  onRefresh?: (id: string) => void;
+  lastCheck?: string | null;
   isLoading?: boolean;
 }
 
@@ -29,9 +33,20 @@ export function AdminCard({
   onDelete,
   onManageTeam,
   onAutoDelete,
+  onRefresh,
+  lastCheck,
   isLoading,
 }: AdminCardProps) {
   const isOverCapacity = account.members.length > MAX_TEAM_MEMBERS;
+
+  const formatLastCheck = (timestamp: string | null | undefined) => {
+    if (!timestamp) return null;
+    try {
+      return formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale: vi });
+    } catch {
+      return null;
+    }
+  };
 
   return (
     <motion.div
@@ -101,15 +116,21 @@ export function AdminCard({
         </DropdownMenu>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <p className="text-sm font-medium text-primary">{account.teamName}</p>
+        {lastCheck && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            <span>Checked {formatLastCheck(lastCheck)}</span>
+          </div>
+        )}
       </div>
 
       <TeamCapacityBar memberCount={account.members.length} />
 
       <div className="mt-4 flex items-center justify-between">
         <div className="flex -space-x-2">
-          {account.members.slice(0, 5).map((member, i) => (
+          {account.members.slice(0, 5).map((member) => (
             <div
               key={member.id}
               className="w-7 h-7 rounded-full bg-secondary border-2 border-card flex items-center justify-center text-xs font-medium"
@@ -124,14 +145,29 @@ export function AdminCard({
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onManageTeam(account)}
-          className="text-xs"
-        >
-          Manage Team
-        </Button>
+        <div className="flex items-center gap-2">
+          {onRefresh && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRefresh(account.id)}
+              disabled={isLoading}
+              className="text-xs"
+              title="Sync from ChatGPT"
+            >
+              <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+              Sync
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onManageTeam(account)}
+            className="text-xs"
+          >
+            Manage Team
+          </Button>
+        </div>
       </div>
     </motion.div>
   );
