@@ -50,7 +50,7 @@ const Index = () => {
     refetch,
   } = useAdminAccounts();
 
-  const { getLastCheckForAdmin, markAdminSynced, markAllAdminsSynced } = useCronStatus();
+  const { getLastCheckForAdmin, refreshLogs } = useCronStatus();
 
   const {
     notifications,
@@ -232,7 +232,7 @@ const Index = () => {
         teamSlots={teamSlots}
         onSyncAll={async () => {
           await syncAllAdmins();
-          markAllAdminsSynced(accounts.map(a => a.id));
+          await refreshLogs();
         }}
         onCheckHealth={checkAllTokenHealth}
         isSyncing={isLoading}
@@ -372,7 +372,7 @@ const Index = () => {
                 onAutoDelete={triggerAutoDelete}
                 onRefresh={async (id) => {
                   await refreshFromChatGPT(id);
-                  markAdminSynced(id);
+                  await refreshLogs();
                 }}
                 lastCheck={getLastCheckForAdmin(account.id)}
                 isLoading={isLoading}
