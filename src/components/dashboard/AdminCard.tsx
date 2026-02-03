@@ -13,7 +13,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS } from 'date-fns/locale';
+import { useLanguage } from '@/hooks/useLanguage';
 import {
   Tooltip,
   TooltipContent,
@@ -51,12 +52,16 @@ export function AdminCard({
   onSelect,
   showCheckbox,
 }: AdminCardProps) {
+  const { language, t } = useLanguage();
   const isOverCapacity = account.members.length > MAX_TEAM_MEMBERS;
 
   const formatLastCheck = (timestamp: string | null | undefined) => {
     if (!timestamp) return null;
     try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale: vi });
+      return formatDistanceToNow(new Date(timestamp), { 
+        addSuffix: true, 
+        locale: language === 'vi' ? vi : enUS 
+      });
     } catch {
       return null;
     }
@@ -90,7 +95,7 @@ export function AdminCard({
               {isOverCapacity && (
                 <Badge variant="destructive" className="text-xs">
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  Over Limit
+                  {t('card.overLimit')}
                 </Badge>
               )}
               {/* Token Health Badge */}
@@ -111,8 +116,8 @@ export function AdminCard({
                     </TooltipTrigger>
                     <TooltipContent>
                       {account.tokenHealth.isValid 
-                        ? 'Token hợp lệ' 
-                        : `Token lỗi: ${account.tokenHealth.error || 'Unknown'}`
+                        ? t('card.tokenValid')
+                        : `${t('card.tokenError')}: ${account.tokenHealth.error || 'Unknown'}`
                       }
                     </TooltipContent>
                   </Tooltip>
@@ -132,11 +137,11 @@ export function AdminCard({
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={() => onEdit(account)}>
               <Edit className="w-4 h-4 mr-2" />
-              Edit Account
+              {t('card.editAccount')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onManageTeam(account)}>
               <Users className="w-4 h-4 mr-2" />
-              Manage Team
+              {t('card.manageTeam')}
             </DropdownMenuItem>
             {isOverCapacity && (
               <>
@@ -147,7 +152,7 @@ export function AdminCard({
                   disabled={isLoading}
                 >
                   <Zap className="w-4 h-4 mr-2" />
-                  Trigger Auto-Delete
+                  {t('card.triggerAutoDelete')}
                 </DropdownMenuItem>
               </>
             )}
@@ -157,7 +162,7 @@ export function AdminCard({
               className="text-destructive"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Delete Account
+              {t('card.deleteAccount')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -168,7 +173,7 @@ export function AdminCard({
         {lastCheck && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
-            <span>Checked {formatLastCheck(lastCheck)}</span>
+            <span>{t('card.checked')} {formatLastCheck(lastCheck)}</span>
           </div>
         )}
       </div>
@@ -200,10 +205,10 @@ export function AdminCard({
               onClick={() => onRefresh(account.id)}
               disabled={isLoading}
               className="text-xs"
-              title="Sync from ChatGPT"
+              title={t('card.sync')}
             >
               <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-              Sync
+              {t('card.sync')}
             </Button>
           )}
           <Button
@@ -212,7 +217,7 @@ export function AdminCard({
             onClick={() => onManageTeam(account)}
             className="text-xs"
           >
-            Manage Team
+            {t('card.manageTeam')}
           </Button>
         </div>
       </div>
