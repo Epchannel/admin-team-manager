@@ -12,6 +12,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+export interface TeamSlotInfo {
+  teamName: string;
+  slots: number;
+}
 
 interface HeaderProps {
   onAddAdmin: () => void;
@@ -28,6 +39,7 @@ interface HeaderProps {
   isRefreshing?: boolean;
   onManualRefresh?: () => void;
   availableSlots?: number;
+  teamSlots?: TeamSlotInfo[];
 }
 
 export function Header({ 
@@ -45,6 +57,7 @@ export function Header({
   isRefreshing,
   onManualRefresh,
   availableSlots = 0,
+  teamSlots = [],
 }: HeaderProps) {
   const { signOut } = useAuth();
 
@@ -116,15 +129,43 @@ export function Header({
               <FileJson className="w-4 h-4 mr-2" />
               Import JSON
             </Button>
-            <Button variant="secondary" onClick={onQuickAddUsers} className="relative">
-              <Zap className="w-4 h-4 mr-2" />
-              Quick Add
-              {availableSlots > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full bg-primary text-primary-foreground px-1">
-                  {availableSlots}
-                </span>
-              )}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="secondary" onClick={onQuickAddUsers} className="relative">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Quick Add
+                    {availableSlots > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full bg-primary text-primary-foreground px-1">
+                        {availableSlots}
+                      </span>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm">Slots trống theo team:</p>
+                    {teamSlots.length > 0 ? (
+                      <div className="space-y-0.5 max-h-48 overflow-y-auto">
+                        {teamSlots.map((team, idx) => (
+                          <div key={idx} className="flex justify-between gap-4 text-xs">
+                            <span className="truncate max-w-[150px]">{team.teamName}</span>
+                            <span className={team.slots > 0 ? 'text-green-400' : 'text-muted-foreground'}>
+                              {team.slots} slot{team.slots !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Không có team nào</p>
+                    )}
+                    <p className="text-xs text-muted-foreground border-t pt-1 mt-1">
+                      Tổng: {availableSlots} slots khả dụng
+                    </p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button onClick={onAddAdmin}>
               <Plus className="w-4 h-4 mr-2" />
               Add Admin
