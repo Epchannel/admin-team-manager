@@ -50,7 +50,7 @@ const Index = () => {
     refetch,
   } = useAdminAccounts();
 
-  const { getLastCheckForAdmin } = useCronStatus();
+  const { getLastCheckForAdmin, markAdminSynced, markAllAdminsSynced } = useCronStatus();
 
   const {
     notifications,
@@ -230,7 +230,10 @@ const Index = () => {
         onManualRefresh={manualRefresh}
         availableSlots={availableSlots}
         teamSlots={teamSlots}
-        onSyncAll={syncAllAdmins}
+        onSyncAll={async () => {
+          await syncAllAdmins();
+          markAllAdminsSynced(accounts.map(a => a.id));
+        }}
         onCheckHealth={checkAllTokenHealth}
         isSyncing={isLoading}
       />
@@ -358,23 +361,26 @@ const Index = () => {
 
             {/* Admin Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredAccounts.map((account, index) => (
-                <AdminCard
-                  key={account.id}
-                  account={account}
-                  index={index}
-                  onEdit={setEditingAccount}
-                  onDelete={deleteAccount}
-                  onManageTeam={setManagingTeam}
-                  onAutoDelete={triggerAutoDelete}
-                  onRefresh={refreshFromChatGPT}
-                  lastCheck={getLastCheckForAdmin(account.id)}
-                  isLoading={isLoading}
-                  showCheckbox={showBulkMode}
-                  isSelected={selectedAdmins.has(account.id)}
-                  onSelect={handleSelectAdmin}
-                />
-              ))}
+            {filteredAccounts.map((account, index) => (
+              <AdminCard
+                key={account.id}
+                account={account}
+                index={index}
+                onEdit={setEditingAccount}
+                onDelete={deleteAccount}
+                onManageTeam={setManagingTeam}
+                onAutoDelete={triggerAutoDelete}
+                onRefresh={async (id) => {
+                  await refreshFromChatGPT(id);
+                  markAdminSynced(id);
+                }}
+                lastCheck={getLastCheckForAdmin(account.id)}
+                isLoading={isLoading}
+                showCheckbox={showBulkMode}
+                isSelected={selectedAdmins.has(account.id)}
+                onSelect={handleSelectAdmin}
+              />
+            ))}
             </div>
 
             {filteredAccounts.length === 0 && (
