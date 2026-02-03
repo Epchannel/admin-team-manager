@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, UserPlus, Trash2, AlertTriangle, Zap, Crown, Mail, Clock, RefreshCw, Send } from 'lucide-react';
+import { X, UserPlus, Trash2, AlertTriangle, Zap, Crown, Mail, Clock, RefreshCw, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { AdminAccount, TeamMember, PendingInvite, MAX_TEAM_MEMBERS } from '@/types/admin';
@@ -199,9 +199,13 @@ export function TeamManageModal({
                       </Select>
                     </div>
                     <div className="flex items-end">
-                      <Button type="submit" className="w-full">
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Add
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <UserPlus className="w-4 h-4 mr-2" />
+                        )}
+                        {isLoading ? 'Adding...' : 'Add'}
                       </Button>
                     </div>
                   </div>
@@ -270,8 +274,13 @@ export function TeamManageModal({
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                 onClick={() => onRemoveMember(account.id, member.id)}
+                                disabled={isLoading}
                               >
-                                <Trash2 className="w-4 h-4" />
+                                {isLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
                               </Button>
                             </TableCell>
                           </motion.tr>
@@ -330,9 +339,13 @@ export function TeamManageModal({
                         </Select>
                       </div>
                       <div className="flex items-end">
-                        <Button type="submit" className="w-full">
-                          <Send className="w-4 h-4 mr-2" />
-                          Send Invite
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                          {isLoading ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4 mr-2" />
+                          )}
+                          {isLoading ? 'Sending...' : 'Send Invite'}
                         </Button>
                       </div>
                     </div>

@@ -282,6 +282,7 @@ const Index = () => {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSubmit={addAccount}
+        isLoading={isLoading}
       />
 
       <EditAdminModal
