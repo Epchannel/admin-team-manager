@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { AdminAccount, TeamMember, DashboardStats, MAX_TEAM_MEMBERS } from '@/types/admin';
+import { AdminAccount, TeamMember, PendingInvite, DashboardStats, MAX_TEAM_MEMBERS } from '@/types/admin';
 import { toast } from 'sonner';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -15,7 +15,10 @@ const initialAccounts: AdminAccount[] = [
     members: [
       { id: '1', email: 'dev1@company.com', name: 'Developer 1', role: 'member', addedAt: new Date().toISOString() },
       { id: '2', email: 'dev2@company.com', name: 'Developer 2', role: 'member', addedAt: new Date().toISOString() },
-      { id: '3', email: 'dev3@company.com', name: 'Developer 3', role: 'member', addedAt: new Date().toISOString() },
+      { id: '3', email: 'dev3@company.com', name: 'Developer 3', role: 'owner', addedAt: new Date().toISOString() },
+    ],
+    pendingInvites: [
+      { id: 'inv1', email: 'newdev@company.com', name: 'New Developer', role: 'member', invitedAt: new Date().toISOString(), status: 'pending' },
     ],
   },
   {
@@ -30,8 +33,12 @@ const initialAccounts: AdminAccount[] = [
       { id: '5', email: 'mark2@company.com', name: 'Marketer 2', role: 'member', addedAt: new Date().toISOString() },
       { id: '6', email: 'mark3@company.com', name: 'Marketer 3', role: 'member', addedAt: new Date().toISOString() },
       { id: '7', email: 'mark4@company.com', name: 'Marketer 4', role: 'member', addedAt: new Date().toISOString() },
-      { id: '8', email: 'mark5@company.com', name: 'Marketer 5', role: 'member', addedAt: new Date().toISOString() },
+      { id: '8', email: 'mark5@company.com', name: 'Marketer 5', role: 'owner', addedAt: new Date().toISOString() },
       { id: '9', email: 'mark6@company.com', name: 'Marketer 6', role: 'member', addedAt: new Date().toISOString() },
+    ],
+    pendingInvites: [
+      { id: 'inv2', email: 'marketing@company.com', name: 'Marketing Lead', role: 'owner', invitedAt: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'pending' },
+      { id: 'inv3', email: 'expired@company.com', name: 'Expired User', role: 'member', invitedAt: new Date(Date.now() - 86400000 * 10).toISOString(), status: 'expired' },
     ],
   },
 ];
@@ -49,12 +56,13 @@ export function useAdminAccounts() {
     return { totalAdmins, totalMembers, teamsAtCapacity, teamsOverCapacity };
   }, [accounts]);
 
-  const addAccount = useCallback((account: Omit<AdminAccount, 'id' | 'createdAt' | 'members'>) => {
+  const addAccount = useCallback((account: Omit<AdminAccount, 'id' | 'createdAt' | 'members' | 'pendingInvites'>) => {
     const newAccount: AdminAccount = {
       ...account,
       id: generateId(),
       createdAt: new Date().toISOString(),
       members: [],
+      pendingInvites: [],
     };
     setAccounts(prev => [...prev, newAccount]);
     toast.success('Admin account added successfully');
@@ -123,6 +131,7 @@ export function useAdminAccounts() {
         id: generateId(),
         createdAt: new Date().toISOString(),
         members: acc.members || [],
+        pendingInvites: acc.pendingInvites || [],
         status: (acc.members?.length || 0) > MAX_TEAM_MEMBERS ? 'warning' : 'active',
       })) as AdminAccount[];
 
@@ -131,6 +140,55 @@ export function useAdminAccounts() {
     } catch (error) {
       toast.error('Invalid JSON format');
     }
+  }, []);
+
+  const sendInvite = useCallback((accountId: string, invite: Omit<PendingInvite, 'id' | 'invitedAt' | 'status'>) => {
+    setAccounts(prev => prev.map(acc => {
+      if (acc.id === accountId) {
+        const newInvite: PendingInvite = {
+          ...invite,
+          id: generateId(),
+          invitedAt: new Date().toISOString(),
+          status: 'pending',
+        };
+        return {
+          ...acc,
+          pendingInvites: [...acc.pendingInvites, newInvite],
+        };
+      }
+      return acc;
+    }));
+    toast.success('Invite sent successfully');
+  }, []);
+
+  const cancelInvite = useCallback((accountId: string, inviteId: string) => {
+    setAccounts(prev => prev.map(acc => {
+      if (acc.id === accountId) {
+        return {
+          ...acc,
+          pendingInvites: acc.pendingInvites.filter(inv => inv.id !== inviteId),
+        };
+      }
+      return acc;
+    }));
+    toast.success('Invite cancelled');
+  }, []);
+
+  const resendInvite = useCallback((accountId: string, inviteId: string) => {
+    setAccounts(prev => prev.map(acc => {
+      if (acc.id === accountId) {
+        return {
+          ...acc,
+          pendingInvites: acc.pendingInvites.map(inv => 
+            inv.id === inviteId 
+              ? { ...inv, invitedAt: new Date().toISOString(), status: 'pending' as const }
+              : inv
+          ),
+        };
+      }
+      return acc;
+    }));
+    toast.success('Invite resent');
   }, []);
 
   const triggerAutoDelete = useCallback(async (accountId: string) => {
@@ -167,5 +225,8 @@ export function useAdminAccounts() {
     removeMember,
     importFromJson,
     triggerAutoDelete,
+    sendInvite,
+    cancelInvite,
+    resendInvite,
   };
 }

@@ -34,6 +34,9 @@ const Index = () => {
     removeMember,
     importFromJson,
     triggerAutoDelete,
+    sendInvite,
+    cancelInvite,
+    resendInvite,
   } = useAdminAccounts();
 
   const {
@@ -248,6 +251,9 @@ const Index = () => {
         onAddMember={addMember}
         onRemoveMember={removeMember}
         onAutoDelete={triggerAutoDelete}
+        onSendInvite={sendInvite}
+        onCancelInvite={cancelInvite}
+        onResendInvite={resendInvite}
         isLoading={isLoading}
       />
     </div>
