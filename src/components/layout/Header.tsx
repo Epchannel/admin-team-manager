@@ -1,14 +1,18 @@
-import { Bot, Plus, FileJson, Download } from 'lucide-react';
+import { Bot, Plus, FileJson, Download, LogOut, RefreshCw, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Notification } from '@/types/activity';
+import { useAuth } from '@/hooks/useAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface HeaderProps {
   onAddAdmin: () => void;
@@ -20,6 +24,9 @@ interface HeaderProps {
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onClearNotification: (id: string) => void;
+  countdown?: number;
+  isRefreshing?: boolean;
+  onManualRefresh?: () => void;
 }
 
 export function Header({ 
@@ -32,7 +39,16 @@ export function Header({
   onMarkAsRead,
   onMarkAllAsRead,
   onClearNotification,
+  countdown,
+  isRefreshing,
+  onManualRefresh,
 }: HeaderProps) {
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl sticky top-0 z-40">
       <div className="container mx-auto px-4 py-4">
@@ -48,6 +64,25 @@ export function Header({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Auto-refresh indicator */}
+            {countdown !== undefined && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Timer className="w-3 h-3" />
+                <span>Auto-refresh: {countdown}s</span>
+                {onManualRefresh && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onManualRefresh}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                )}
+              </div>
+            )}
+
             <ThemeToggle />
             
             <NotificationCenter
@@ -86,6 +121,36 @@ export function Header({
               <Plus className="w-4 h-4 mr-2" />
               Add Admin
             </Button>
+
+            {/* User Menu */}
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {user.email?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium text-sm">{user.email}</p>
+                      <Badge variant="secondary" className="w-fit text-xs">
+                        Authenticated
+                      </Badge>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Đăng xuất
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
