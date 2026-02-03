@@ -1,4 +1,4 @@
-import { Bot, Plus, FileJson, Download, LogOut, RefreshCw, Timer } from 'lucide-react';
+import { Bot, Plus, FileJson, Download, LogOut, RefreshCw, Timer, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 interface HeaderProps {
   onAddAdmin: () => void;
   onImportJson: () => void;
+  onQuickAddUsers: () => void;
   onExportCSV: (type: 'admins' | 'users') => void;
   onExportJSON: () => void;
   notifications: Notification[];
@@ -31,6 +32,7 @@ interface HeaderProps {
 export function Header({ 
   onAddAdmin, 
   onImportJson,
+  onQuickAddUsers,
   onExportCSV,
   onExportJSON,
   notifications,
@@ -111,6 +113,10 @@ export function Header({
             <Button variant="outline" onClick={onImportJson}>
               <FileJson className="w-4 h-4 mr-2" />
               Import JSON
+            </Button>
+            <Button variant="secondary" onClick={onQuickAddUsers}>
+              <Zap className="w-4 h-4 mr-2" />
+              Quick Add
             </Button>
             <Button onClick={onAddAdmin}>
               <Plus className="w-4 h-4 mr-2" />
