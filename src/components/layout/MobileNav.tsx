@@ -1,13 +1,14 @@
-import { LayoutGrid, Users, BarChart3, Clock, Plus } from 'lucide-react';
+import { LayoutGrid, Users, BarChart3, Clock, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MobileNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  onAddAdmin: () => void;
+  onQuickAdd: () => void;
+  availableSlots?: number;
 }
 
-export function MobileNav({ activeTab, onTabChange, onAddAdmin }: MobileNavProps) {
+export function MobileNav({ activeTab, onTabChange, onQuickAdd, availableSlots = 0 }: MobileNavProps) {
   const tabs = [
     { id: 'admins', icon: LayoutGrid, label: 'Admins' },
     { id: 'users', icon: Users, label: 'Users' },
@@ -38,13 +39,18 @@ export function MobileNav({ activeTab, onTabChange, onAddAdmin }: MobileNavProps
           );
         })}
         
-        {/* Floating Add Button */}
+        {/* Floating Quick Add Button - Primary action */}
         <Button
           size="icon"
-          className="absolute -top-6 left-1/2 -translate-x-1/2 h-12 w-12 rounded-full shadow-lg"
-          onClick={onAddAdmin}
+          className="absolute -top-6 left-1/2 -translate-x-1/2 h-14 w-14 rounded-full shadow-lg"
+          onClick={onQuickAdd}
         >
-          <Plus className="w-6 h-6" />
+          <Zap className="w-6 h-6" />
+          {availableSlots > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full bg-secondary text-secondary-foreground px-1">
+              {availableSlots}
+            </span>
+          )}
         </Button>
       </div>
     </nav>

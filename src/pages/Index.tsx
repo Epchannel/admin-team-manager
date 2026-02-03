@@ -442,7 +442,8 @@ const Index = () => {
         <MobileNav
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          onAddAdmin={() => setShowAddModal(true)}
+          onQuickAdd={() => setShowQuickAddModal(true)}
+          availableSlots={availableSlots}
         />
       )}
 

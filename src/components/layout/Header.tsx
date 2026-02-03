@@ -85,12 +85,12 @@ export function Header({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Auto-refresh indicator */}
+          <div className="flex items-center gap-2">
+            {/* Auto-refresh indicator - hidden on mobile */}
             {countdown !== undefined && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
                 <Timer className="w-3 h-3" />
-                <span>Auto-refresh: {countdown}s</span>
+                <span>{countdown}s</span>
                 {onManualRefresh && (
                   <Button
                     variant="ghost"
@@ -105,58 +105,51 @@ export function Header({
               </div>
             )}
 
-            {/* Sync All Button */}
-            {onSyncAll && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onSyncAll}
-                      disabled={isSyncing}
-                    >
-                      {isSyncing ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                      )}
-                      Sync All
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Đồng bộ tất cả admin (S)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+            {/* Actions Dropdown - Groups Sync, Health, Export */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="hidden md:flex">
+                  <Activity className="w-4 h-4 mr-2" />
+                  Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {onSyncAll && (
+                  <DropdownMenuItem onClick={onSyncAll} disabled={isSyncing}>
+                    {isSyncing ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Sync All (S)
+                  </DropdownMenuItem>
+                )}
+                {onCheckHealth && (
+                  <DropdownMenuItem onClick={onCheckHealth} disabled={isSyncing}>
+                    <Activity className="w-4 h-4 mr-2" />
+                    Health Check
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onExportCSV('admins')}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Admins (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onExportCSV('users')}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Users (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onExportJSON}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export All (JSON)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Health Check Button */}
-            {onCheckHealth && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onCheckHealth}
-                      disabled={isSyncing}
-                    >
-                      <Activity className="w-4 h-4 mr-2" />
-                      Health
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Kiểm tra trạng thái token</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            {/* Keyboard Shortcuts */}
+            {/* Keyboard Shortcuts - desktop only */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button variant="ghost" size="icon" className="h-9 w-9 hidden md:flex">
                   <Keyboard className="w-4 h-4" />
                 </Button>
               </PopoverTrigger>
@@ -185,34 +178,15 @@ export function Header({
               onClear={onClearNotification}
             />
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onExportCSV('admins')}>
-                  Export Admins (CSV)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onExportCSV('users')}>
-                  Export Users (CSV)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onExportJSON}>
-                  Export All (JSON)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+            {/* Quick Add - Primary action with slot badge */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="secondary" onClick={onQuickAddUsers} className="relative">
+                  <Button onClick={onQuickAddUsers} className="relative hidden md:flex">
                     <Zap className="w-4 h-4 mr-2" />
                     Quick Add
                     {availableSlots > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full bg-primary text-primary-foreground px-1">
+                      <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full bg-secondary text-secondary-foreground px-1">
                         {availableSlots}
                       </span>
                     )}
@@ -242,7 +216,9 @@ export function Header({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Button onClick={onAddAdmin}>
+
+            {/* Add Admin - secondary on desktop */}
+            <Button variant="outline" onClick={onAddAdmin} className="hidden md:flex">
               <Plus className="w-4 h-4 mr-2" />
               Add Admin
             </Button>
