@@ -265,3 +265,33 @@ export const autoAddUsers = (emails: string[]) =>
     method: 'POST',
     body: JSON.stringify({ emails }),
   });
+
+// Sync API - Sync members and pending invites from ChatGPT API
+export interface SyncResult {
+  success: boolean;
+  summary: {
+    syncedAdmins: number;
+    failedAdmins: number;
+    totalMembers: number;
+    totalPendingInvites: number;
+  };
+  results: {
+    success: Array<{
+      adminId: string;
+      email: string;
+      memberCount: number;
+      pendingInvitesCount: number;
+    }>;
+    failed: Array<{
+      adminId: string;
+      email: string;
+      error: string;
+    }>;
+  };
+}
+
+export const syncAdmin = (adminId?: string) =>
+  apiFetch<SyncResult>('/api/sync', {
+    method: 'POST',
+    body: JSON.stringify(adminId ? { adminId } : {}),
+  });

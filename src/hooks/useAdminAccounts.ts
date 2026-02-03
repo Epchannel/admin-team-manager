@@ -487,68 +487,30 @@ export function useAdminAccounts() {
   const refreshFromChatGPT = useCallback(async (accountId: string) => {
     setIsLoading(true);
     try {
-      const account = accounts.find(acc => acc.id === accountId);
-      if (!account?.accessToken || !account?.accountId) {
-        throw new Error('Account missing access token or account ID');
-      }
-
-      // Fetch fresh data from ChatGPT
-      const [membersResponse, invitesResponse] = await Promise.all([
-        api.getTeamMembersFromChatGPT(account.accountId, account.accessToken),
-        api.getPendingInvites(account.accountId, account.accessToken),
-      ]);
-
-      const freshMembers: TeamMember[] = membersResponse.success 
-        ? membersResponse.data.map(m => ({
-            id: m.id,
-            email: m.email,
-            name: m.name || m.email.split('@')[0],
-            role: m.role === 'owner' ? 'owner' : 'member',
-            addedAt: m.addedAt || new Date().toISOString(),
-          }))
-        : account.members;
-
-      const freshInvites: PendingInvite[] = invitesResponse.success
-        ? invitesResponse.data.map(inv => ({
-            id: inv.id,
-            email: inv.email,
-            name: inv.email.split('@')[0],
-            role: inv.role === 'owner' ? 'owner' : 'member',
-            invitedAt: inv.invitedAt,
-            status: inv.status,
-          }))
-        : account.pendingInvites;
-
-      // Update local state
-      setAccounts(prev => prev.map(acc => {
-        if (acc.id === accountId) {
-          return {
-            ...acc,
-            members: freshMembers,
-            pendingInvites: freshInvites,
-            status: freshMembers.length > MAX_TEAM_MEMBERS ? 'warning' : 'active',
-          };
+      // Call the new sync endpoint
+      const response = await api.syncAdmin(accountId);
+      
+      if (response.success) {
+        // Refresh data from backend after sync
+        await fetchAdmins();
+        
+        const syncedAdmin = response.results.success.find(s => s.adminId === accountId);
+        if (syncedAdmin) {
+          toast.success(`Synced: ${syncedAdmin.memberCount} members, ${syncedAdmin.pendingInvitesCount} pending invites`);
+        } else {
+          toast.success('Sync completed');
         }
-        return acc;
-      }));
-
-      // Sync to backend
-      await api.updateTeamMembers(accountId, freshMembers.map(m => ({
-        id: m.id,
-        email: m.email,
-        name: m.name,
-        role: m.role,
-        addedAt: m.addedAt,
-      })));
-
-      toast.success('Synced with ChatGPT successfully');
+      } else {
+        const failedAdmin = response.results.failed.find(f => f.adminId === accountId);
+        throw new Error(failedAdmin?.error || 'Sync failed');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sync with ChatGPT';
       toast.error(message);
     } finally {
       setIsLoading(false);
     }
-  }, [accounts]);
+  }, [fetchAdmins]);
 
   return {
     accounts,
