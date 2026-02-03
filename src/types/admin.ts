@@ -6,12 +6,22 @@ export interface TeamMember {
   addedAt: string;
 }
 
+export interface PendingInvite {
+  id: string;
+  email: string;
+  name: string;
+  role: 'owner' | 'member';
+  invitedAt: string;
+  status: 'pending' | 'expired';
+}
+
 export interface AdminAccount {
   id: string;
   email: string;
   name: string;
   teamName: string;
   members: TeamMember[];
+  pendingInvites: PendingInvite[];
   createdAt: string;
   status: 'active' | 'inactive' | 'warning';
   accessToken?: string;
