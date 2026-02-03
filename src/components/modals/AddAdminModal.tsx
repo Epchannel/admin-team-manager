@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, FileJson, Upload } from 'lucide-react';
+import { X, FileJson, Upload, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ interface AddAdminModalProps {
     accessToken?: string;
     accountId?: string;
   }) => void;
+  isLoading?: boolean;
 }
 
 interface ParsedJsonData {
@@ -40,7 +41,7 @@ const sampleJson = `{
   "accessToken": "eyJhbGciOiJSUzI1NiIs..."
 }`;
 
-export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps) {
+export function AddAdminModal({ isOpen, onClose, onSubmit, isLoading }: AddAdminModalProps) {
   const [jsonData, setJsonData] = useState('');
   const [error, setError] = useState('');
   const [parsedData, setParsedData] = useState<ParsedJsonData | null>(null);
@@ -207,15 +208,22 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
               </p>
 
               <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" className="flex-1" onClick={handleClose}>
+                <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={isLoading}>
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   className="flex-1"
-                  disabled={!parsedData}
+                  disabled={!parsedData || isLoading}
                 >
-                  Add Account
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Account'
+                  )}
                 </Button>
               </div>
             </form>
