@@ -65,11 +65,12 @@ export interface CronLogEntry {
   id: number;
   adminId: string;
   adminEmail?: string;
-  checkType: 'manual' | 'auto';
+  checkType: 'manual' | 'auto' | 'auto_remove';
   memberCount: number;
   status: 'success' | 'failed';
   createdAt: string;
   message?: string;
+  errorMessage?: string;
 }
 
 export interface ApiResponse<T> {
@@ -230,7 +231,7 @@ export const getCronLogs = (adminId?: string, limit: number = 50) =>
 export const addCronLog = (log: {
   adminId: string;
   adminEmail: string;
-  checkType: 'manual' | 'auto';
+  checkType: 'manual' | 'auto' | 'auto_remove';
   memberCount: number;
   status: 'success' | 'failed';
 }) =>

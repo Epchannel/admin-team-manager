@@ -16,11 +16,12 @@ export interface CronLog {
   id: number;
   adminId: string;
   adminEmail?: string;
-  checkType: 'manual' | 'auto';
+  checkType: 'manual' | 'auto' | 'auto_remove';
   memberCount: number;
   status: 'success' | 'failed';
   createdAt: string;
   message?: string;
+  errorMessage?: string;
 }
 
 export function useCronStatus() {

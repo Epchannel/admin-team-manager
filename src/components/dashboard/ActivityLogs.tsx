@@ -236,8 +236,13 @@ export function ActivityLogs({ logs }: ActivityLogsProps) {
                             {log.adminEmail || log.adminId}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {log.memberCount} members • {log.checkType}
+                            {log.memberCount} members • {log.checkType === 'auto_remove' ? '🗑️ auto remove' : log.checkType}
                           </p>
+                          {log.errorMessage && (
+                            <p className="text-xs text-warning mt-1">
+                              {log.errorMessage}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
