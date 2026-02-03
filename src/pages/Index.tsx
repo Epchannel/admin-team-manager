@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Users, UserCheck, AlertTriangle, Shield, Search, 
   LayoutGrid, Table as TableIcon, BarChart3, Clock 
@@ -6,6 +6,7 @@ import {
 import { useAdminAccounts } from '@/hooks/useAdminAccounts';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useCronStatus } from '@/hooks/useCronStatus';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { AdminAccount } from '@/types/admin';
 import { Header } from '@/components/layout/Header';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -39,6 +40,7 @@ const Index = () => {
     cancelInvite,
     resendInvite,
     refreshFromChatGPT,
+    refetch,
   } = useAdminAccounts();
 
   const { getLastCheckForAdmin } = useCronStatus();
@@ -50,7 +52,39 @@ const Index = () => {
     markAsRead,
     markAllAsRead,
     clearNotification,
+    addNotification,
   } = useNotifications();
+
+  // Track previous account data for change detection
+  const prevAccountsRef = useRef<string>('');
+
+  // Auto-refresh with change detection
+  const { countdown, isRefreshing, manualRefresh } = useAutoRefresh(
+    accounts,
+    refetch,
+    {
+      enabled: true,
+      interval: 30000, // 30 seconds
+      onDataChange: () => {
+        addNotification('info', 'Dữ liệu đã cập nhật', 'Có thay đổi mới từ backend');
+      },
+    }
+  );
+
+  // Detect changes and show notification
+  useEffect(() => {
+    const currentHash = JSON.stringify(accounts.map(a => ({
+      id: a.id,
+      membersCount: a.members.length,
+      status: a.status,
+    })));
+
+    if (prevAccountsRef.current && prevAccountsRef.current !== currentHash) {
+      toast.info('Dữ liệu đã được cập nhật từ backend');
+    }
+    
+    prevAccountsRef.current = currentHash;
+  }, [accounts]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
@@ -110,6 +144,9 @@ const Index = () => {
         onMarkAsRead={markAsRead}
         onMarkAllAsRead={markAllAsRead}
         onClearNotification={clearNotification}
+        countdown={countdown}
+        isRefreshing={isRefreshing}
+        onManualRefresh={manualRefresh}
       />
 
       <main className="container mx-auto px-4 py-8 relative">
