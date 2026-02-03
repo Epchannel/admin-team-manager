@@ -97,6 +97,13 @@ const Index = () => {
 
   const stats = getStats();
 
+  // Calculate available slots across all teams (max 6 per team)
+  const MAX_TEAM_MEMBERS = 6;
+  const availableSlots = accounts.reduce((total, acc) => {
+    const slots = MAX_TEAM_MEMBERS - acc.members.length;
+    return total + Math.max(0, slots);
+  }, 0);
+
   // Apply filters
   const filteredAccounts = accounts.filter((acc) => {
     // Search filter
@@ -150,6 +157,7 @@ const Index = () => {
         countdown={countdown}
         isRefreshing={isRefreshing}
         onManualRefresh={manualRefresh}
+        availableSlots={availableSlots}
       />
 
       <main className="container mx-auto px-4 py-8 relative">
