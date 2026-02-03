@@ -62,6 +62,8 @@ export function TeamManageModal({
     role: 'member' as 'owner' | 'member',
   });
 
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+
   if (!account) return null;
 
   const isOverCapacity = account.members.length > MAX_TEAM_MEMBERS;
@@ -265,7 +267,7 @@ export function TeamManageModal({
                             <TableCell className="text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {format(new Date(member.addedAt), 'dd/MM/yyyy')}
+                                {format(new Date(member.addedAt), 'dd/MM/yyyy HH:mm')}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -273,10 +275,14 @@ export function TeamManageModal({
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => onRemoveMember(account.id, member.id)}
-                                disabled={isLoading}
+                                onClick={async () => {
+                                  setDeletingMemberId(member.id);
+                                  await onRemoveMember(account.id, member.id);
+                                  setDeletingMemberId(null);
+                                }}
+                                disabled={deletingMemberId === member.id || isLoading}
                               >
-                                {isLoading ? (
+                                {deletingMemberId === member.id ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                   <Trash2 className="w-4 h-4" />
@@ -407,7 +413,7 @@ export function TeamManageModal({
                             <TableCell className="text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {format(new Date(invite.invitedAt), 'dd/MM/yyyy')}
+                                {format(new Date(invite.invitedAt), 'dd/MM/yyyy HH:mm')}
                               </div>
                             </TableCell>
                             <TableCell>
