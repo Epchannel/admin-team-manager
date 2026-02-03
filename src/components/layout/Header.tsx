@@ -1,9 +1,10 @@
-import { Bot, Plus, Download, LogOut, RefreshCw, Timer, Zap, Activity, Keyboard, Loader2 } from 'lucide-react';
+import { Bot, Plus, Download, LogOut, RefreshCw, Timer, Zap, Activity, Keyboard, Loader2, Languages, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Notification } from '@/types/activity';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/hooks/useLanguage';
 import { KEYBOARD_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import {
   DropdownMenu,
@@ -11,6 +12,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -70,7 +75,7 @@ export function Header({
   isSyncing,
 }: HeaderProps) {
   const { signOut } = useAuth();
-
+  const { language, setLanguage, t } = useLanguage();
   return (
     <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl sticky top-0 z-40">
       <div className="container mx-auto px-4 py-4">
@@ -80,8 +85,8 @@ export function Header({
               <Bot className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">ChatGPT Admin Manager</h1>
-              <p className="text-sm text-muted-foreground">Manage your admin accounts & teams</p>
+              <h1 className="text-xl font-bold">{t('header.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('header.subtitle')}</p>
             </div>
           </div>
 
@@ -110,13 +115,13 @@ export function Header({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="hidden md:flex">
                   <Activity className="w-4 h-4 mr-2" />
-                  Actions
+                  {t('header.actions')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={onAddAdmin}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Admin (N)
+                  {t('header.addAdmin')} (N)
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {onSyncAll && (
@@ -126,27 +131,27 @@ export function Header({
                     ) : (
                       <RefreshCw className="w-4 h-4 mr-2" />
                     )}
-                    Sync All (S)
+                    {t('header.syncAll')} (S)
                   </DropdownMenuItem>
                 )}
                 {onCheckHealth && (
                   <DropdownMenuItem onClick={onCheckHealth} disabled={isSyncing}>
                     <Activity className="w-4 h-4 mr-2" />
-                    Health Check
+                    {t('header.healthCheck')}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onExportCSV('admins')}>
                   <Download className="w-4 h-4 mr-2" />
-                  Export Admins (CSV)
+                  {t('header.exportAdmins')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onExportCSV('users')}>
                   <Download className="w-4 h-4 mr-2" />
-                  Export Users (CSV)
+                  {t('header.exportUsers')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onExportJSON}>
                   <Download className="w-4 h-4 mr-2" />
-                  Export All (JSON)
+                  {t('header.exportAll')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -160,7 +165,7 @@ export function Header({
               </PopoverTrigger>
               <PopoverContent align="end" className="w-64">
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Phím tắt</h4>
+                  <h4 className="font-medium text-sm">{t('header.shortcuts')}</h4>
                   <div className="space-y-1">
                     {KEYBOARD_SHORTCUTS.map((shortcut) => (
                       <div key={shortcut.key} className="flex items-center justify-between text-sm">
@@ -189,7 +194,7 @@ export function Header({
                 <TooltipTrigger asChild>
                   <Button onClick={onQuickAddUsers} className="relative hidden md:flex">
                     <Zap className="w-4 h-4 mr-2" />
-                    Quick Add
+                    {t('header.quickAdd')}
                     {availableSlots > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full bg-secondary text-secondary-foreground px-1">
                         {availableSlots}
@@ -199,23 +204,23 @@ export function Header({
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-medium text-sm">Slots trống theo team:</p>
+                    <p className="font-medium text-sm">{t('slots.title')}</p>
                     {teamSlots.length > 0 ? (
                       <div className="space-y-0.5 max-h-48 overflow-y-auto">
                         {teamSlots.map((team, idx) => (
                           <div key={idx} className="flex justify-between gap-4 text-xs">
                             <span className="truncate max-w-[150px]">{team.teamName}</span>
                             <span className={team.slots > 0 ? 'text-green-400' : 'text-muted-foreground'}>
-                              {team.slots} slot{team.slots !== 1 ? 's' : ''}
+                              {team.slots} {team.slots !== 1 ? t('slots.slots') : t('slots.slot')}
                             </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground">Không có team nào</p>
+                      <p className="text-xs text-muted-foreground">{t('slots.noTeam')}</p>
                     )}
                     <p className="text-xs text-muted-foreground border-t pt-1 mt-1">
-                      Tổng: {availableSlots} slots khả dụng
+                      {t('slots.total')} {availableSlots} {t('slots.available')}
                     </p>
                   </div>
                 </TooltipContent>
@@ -236,12 +241,31 @@ export function Header({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">Admin</p>
+                  <p className="text-sm font-medium">{t('header.admin')}</p>
                 </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Languages className="w-4 h-4 mr-2" />
+                    {t('header.language')}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={() => setLanguage('vi')}>
+                        {language === 'vi' && <Check className="w-4 h-4 mr-2" />}
+                        <span className={language === 'vi' ? '' : 'ml-6'}>{t('header.vietnamese')}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setLanguage('en')}>
+                        {language === 'en' && <Check className="w-4 h-4 mr-2" />}
+                        <span className={language === 'en' ? '' : 'ml-6'}>{t('header.english')}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
-                  Đăng xuất
+                  {t('header.logout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
