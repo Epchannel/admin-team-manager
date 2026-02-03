@@ -244,3 +244,24 @@ export const triggerCronRun = () =>
   apiFetch<ApiResponse<null>>('/api/cron-run', {
     method: 'POST',
   });
+
+// Auto-Add Feature - Automatically distribute emails to teams with available slots
+export interface AutoAddResult {
+  success: boolean;
+  summary: {
+    totalRequested: number;
+    successCount: number;
+    failedCount: number;
+  };
+  results: {
+    success: Array<{ email: string; adminId: string; teamName: string }>;
+    assignments: Array<{ email: string; adminId: string; teamName: string }>;
+    failed?: Array<{ email: string; reason: string }>;
+  };
+}
+
+export const autoAddUsers = (emails: string[]) =>
+  apiFetch<AutoAddResult>('/api/auto-add', {
+    method: 'POST',
+    body: JSON.stringify({ emails }),
+  });

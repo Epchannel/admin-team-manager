@@ -19,6 +19,7 @@ import { AddAdminModal } from '@/components/modals/AddAdminModal';
 import { EditAdminModal } from '@/components/modals/EditAdminModal';
 import { ImportJsonModal } from '@/components/modals/ImportJsonModal';
 import { TeamManageModal } from '@/components/modals/TeamManageModal';
+import { QuickAddUsersModal } from '@/components/modals/QuickAddUsersModal';
 import { exportToCSV, exportToJSON } from '@/utils/exportData';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -90,6 +91,7 @@ const Index = () => {
   const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
   const [managingTeam, setManagingTeam] = useState<AdminAccount | null>(null);
 
@@ -137,6 +139,7 @@ const Index = () => {
       <Header
         onAddAdmin={() => setShowAddModal(true)}
         onImportJson={() => setShowImportModal(true)}
+        onQuickAddUsers={() => setShowQuickAddModal(true)}
         onExportCSV={handleExportCSV}
         onExportJSON={handleExportJSON}
         notifications={notifications}
@@ -298,6 +301,12 @@ const Index = () => {
         onCancelInvite={cancelInvite}
         onResendInvite={resendInvite}
         isLoading={isLoading}
+      />
+
+      <QuickAddUsersModal
+        isOpen={showQuickAddModal}
+        onClose={() => setShowQuickAddModal(false)}
+        onSuccess={refetch}
       />
     </div>
   );
