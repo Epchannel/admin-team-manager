@@ -114,6 +114,11 @@ export function Header({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={onAddAdmin}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Admin (N)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {onSyncAll && (
                   <DropdownMenuItem onClick={onSyncAll} disabled={isSyncing}>
                     {isSyncing ? (
@@ -217,11 +222,6 @@ export function Header({
               </Tooltip>
             </TooltipProvider>
 
-            {/* Add Admin - secondary on desktop */}
-            <Button variant="outline" onClick={onAddAdmin} className="hidden md:flex">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Admin
-            </Button>
 
             {/* User Menu */}
             <DropdownMenu>
