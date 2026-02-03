@@ -9,6 +9,7 @@ import { useCronStatus } from '@/hooks/useCronStatus';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useLanguage } from '@/hooks/useLanguage';
 import { AdminAccount } from '@/types/admin';
 import { Header } from '@/components/layout/Header';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -51,7 +52,7 @@ const Index = () => {
   } = useAdminAccounts();
 
   const { getLastCheckForAdmin, refreshLogs } = useCronStatus();
-
+  const { t } = useLanguage();
   const {
     notifications,
     activityLogs,
@@ -73,7 +74,7 @@ const Index = () => {
       enabled: true,
       interval: 30000, // 30 seconds
       onDataChange: () => {
-        addNotification('info', 'Dữ liệu đã cập nhật', 'Có thay đổi mới từ backend');
+        addNotification('info', t('notification.dataUpdated'), t('notification.newChanges'));
       },
     }
   );
@@ -87,11 +88,11 @@ const Index = () => {
     })));
 
     if (prevAccountsRef.current && prevAccountsRef.current !== currentHash) {
-      toast.info('Dữ liệu đã được cập nhật từ backend');
+      toast.info(t('notification.dataUpdated'));
     }
     
     prevAccountsRef.current = currentHash;
-  }, [accounts]);
+  }, [accounts, t]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
@@ -194,7 +195,7 @@ const Index = () => {
     if (selectedAdmins.size === 0) return;
     
     const confirmDelete = window.confirm(
-      `Bạn có chắc chắn muốn xoá ${selectedAdmins.size} admin đã chọn?`
+      t('search.delete') + ` ${selectedAdmins.size} ${t('search.admins')}?`
     );
     
     if (!confirmDelete) return;
@@ -205,8 +206,8 @@ const Index = () => {
     
     setSelectedAdmins(new Set());
     setShowBulkMode(false);
-    toast.success(`Đã xoá ${selectedAdmins.size} admin`);
-  }, [selectedAdmins, deleteAccount]);
+    toast.success(`${t('search.delete')} ${selectedAdmins.size} ${t('search.admins')}`);
+  }, [selectedAdmins, deleteAccount, t]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,26 +243,26 @@ const Index = () => {
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatsCard
-            title="Total Admins"
+            title={t('stats.totalAdmins')}
             value={stats.totalAdmins}
             icon={Shield}
             delay={0}
           />
           <StatsCard
-            title="Total Members"
+            title={t('stats.totalMembers')}
             value={stats.totalMembers}
             icon={Users}
             delay={0.1}
           />
           <StatsCard
-            title="Teams at Capacity"
+            title={t('stats.teamsAtCapacity')}
             value={stats.teamsAtCapacity}
             icon={UserCheck}
             variant="warning"
             delay={0.2}
           />
           <StatsCard
-            title="Over Capacity"
+            title={t('stats.overCapacity')}
             value={stats.teamsOverCapacity}
             icon={AlertTriangle}
             variant={stats.teamsOverCapacity > 0 ? 'danger' : 'default'}
@@ -276,19 +277,19 @@ const Index = () => {
             <TabsList className="bg-secondary/50">
               <TabsTrigger value="admins" className="gap-2">
                 <LayoutGrid className="w-4 h-4" />
-                Admin Accounts
+                {t('tabs.admins')}
               </TabsTrigger>
               <TabsTrigger value="users" className="gap-2">
                 <TableIcon className="w-4 h-4" />
-                All Users
+                {t('tabs.users')}
               </TabsTrigger>
               <TabsTrigger value="analytics" className="gap-2">
                 <BarChart3 className="w-4 h-4" />
-                Analytics
+                {t('tabs.analytics')}
               </TabsTrigger>
               <TabsTrigger value="activity" className="gap-2">
                 <Clock className="w-4 h-4" />
-                Activity
+                {t('tabs.activity')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -300,7 +301,7 @@ const Index = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   ref={searchInputRef}
-                  placeholder="Search admins, emails, or team names... (press /)"
+                  placeholder={t('search.placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -321,7 +322,7 @@ const Index = () => {
                   if (showBulkMode) setSelectedAdmins(new Set());
                 }}
               >
-                {showBulkMode ? 'Cancel' : 'Bulk Select'}
+                {showBulkMode ? t('search.cancel') : t('search.bulkSelect')}
               </Button>
             </div>
 
@@ -335,8 +336,8 @@ const Index = () => {
                   />
                   <span className="text-sm">
                     {selectedAdmins.size > 0 
-                      ? `Đã chọn ${selectedAdmins.size} admin`
-                      : 'Chọn tất cả'
+                      ? `${t('search.selected')} ${selectedAdmins.size} ${t('search.admins')}`
+                      : t('search.selectAll')
                     }
                   </span>
                 </div>
@@ -353,7 +354,7 @@ const Index = () => {
                     ) : (
                       <Trash2 className="w-4 h-4 mr-2" />
                     )}
-                    Xoá {selectedAdmins.size} admin
+                    {t('search.delete')} {selectedAdmins.size} {t('search.admins')}
                   </Button>
                 )}
               </div>
@@ -386,11 +387,11 @@ const Index = () => {
             {filteredAccounts.length === 0 && (
               <div className="text-center py-16">
                 <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium">No admin accounts found</h3>
+                <h3 className="text-lg font-medium">{t('empty.noAdmins')}</h3>
                 <p className="text-muted-foreground mt-1">
                   {searchQuery || Object.values(filters).some(v => v && v !== 'all')
-                    ? 'Try adjusting your search or filters'
-                    : 'Add your first admin account to get started'}
+                    ? t('empty.adjustSearch')
+                    : t('empty.addFirst')}
                 </p>
               </div>
             )}
