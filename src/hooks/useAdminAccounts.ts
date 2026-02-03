@@ -176,86 +176,93 @@ export function useAdminAccounts() {
     }
   }, []);
 
+  // Add member bằng cách gửi invite qua ChatGPT API
   const addMember = useCallback(async (accountId: string, member: Omit<TeamMember, 'id' | 'addedAt'>) => {
     setIsLoading(true);
     try {
       const account = accounts.find(acc => acc.id === accountId);
       if (!account) throw new Error('Account not found');
 
-      const newMember: TeamMember = {
-        ...member,
-        id: generateId(),
-        addedAt: new Date().toISOString(),
-      };
+      // Gửi invite qua ChatGPT proxy API
+      if (account.accessToken && account.accountId) {
+        await api.sendInvite(
+          account.accountId,
+          account.accessToken,
+          [member.email],
+          member.role === 'owner' ? 'owner' : 'standard-user'
+        );
 
-      const updatedMembers = [...account.members, newMember];
-      
-      // Update via API
-      await api.updateTeamMembers(accountId, updatedMembers.map(m => ({
-        id: m.id,
-        email: m.email,
-        name: m.name,
-        role: m.role,
-        addedAt: m.addedAt,
-      })));
+        // Thêm vào pending invites
+        const newInvite: PendingInvite = {
+          id: generateId(),
+          email: member.email,
+          name: member.name,
+          role: member.role,
+          invitedAt: new Date().toISOString(),
+          status: 'pending',
+        };
 
-      setAccounts(prev => prev.map(acc => {
-        if (acc.id === accountId) {
-          if (updatedMembers.length > MAX_TEAM_MEMBERS) {
-            toast.warning(`Team exceeds ${MAX_TEAM_MEMBERS} members! Auto-delete API will be triggered.`);
+        setAccounts(prev => prev.map(acc => {
+          if (acc.id === accountId) {
+            return {
+              ...acc,
+              pendingInvites: [...acc.pendingInvites, newInvite],
+            };
           }
-          return {
-            ...acc,
-            members: updatedMembers,
-            status: updatedMembers.length > MAX_TEAM_MEMBERS ? 'warning' : acc.status,
-          };
-        }
-        return acc;
-      }));
-      toast.success('Member added successfully');
+          return acc;
+        }));
+        toast.success('Invite sent successfully via ChatGPT API');
+      } else {
+        throw new Error('Missing access token or account ID');
+      }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add member';
+      const message = err instanceof Error ? err.message : 'Failed to send invite';
       toast.error(message);
     } finally {
       setIsLoading(false);
     }
   }, [accounts]);
 
+  // Remove member qua ChatGPT API
   const removeMember = useCallback(async (accountId: string, memberId: string) => {
     setIsLoading(true);
     try {
       const account = accounts.find(acc => acc.id === accountId);
       if (!account) throw new Error('Account not found');
 
-      // Try to remove via ChatGPT proxy if we have tokens
+      const member = account.members.find(m => m.id === memberId);
+      if (!member) throw new Error('Member not found');
+
+      // Xoá member qua ChatGPT proxy API
       if (account.accessToken && account.accountId) {
-        try {
-          await api.removeTeamMember(account.accountId, account.accessToken, memberId);
-        } catch {
-          // Fall back to local update if proxy fails
-        }
+        await api.removeTeamMember(account.accountId, account.accessToken, memberId);
+        
+        // Cập nhật state local sau khi xoá thành công
+        const newMembers = account.members.filter(m => m.id !== memberId);
+        
+        // Sync với backend
+        await api.updateTeamMembers(accountId, newMembers.map(m => ({
+          id: m.id,
+          email: m.email,
+          name: m.name,
+          role: m.role,
+          addedAt: m.addedAt,
+        })));
+
+        setAccounts(prev => prev.map(acc => {
+          if (acc.id === accountId) {
+            return {
+              ...acc,
+              members: newMembers,
+              status: newMembers.length <= MAX_TEAM_MEMBERS ? 'active' : 'warning',
+            };
+          }
+          return acc;
+        }));
+        toast.success(`Member ${member.email} removed via ChatGPT API`);
+      } else {
+        throw new Error('Missing access token or account ID');
       }
-
-      const newMembers = account.members.filter(m => m.id !== memberId);
-      await api.updateTeamMembers(accountId, newMembers.map(m => ({
-        id: m.id,
-        email: m.email,
-        name: m.name,
-        role: m.role,
-        addedAt: m.addedAt,
-      })));
-
-      setAccounts(prev => prev.map(acc => {
-        if (acc.id === accountId) {
-          return {
-            ...acc,
-            members: newMembers,
-            status: newMembers.length <= MAX_TEAM_MEMBERS ? 'active' : 'warning',
-          };
-        }
-        return acc;
-      }));
-      toast.success('Member removed successfully');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to remove member';
       toast.error(message);
