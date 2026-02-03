@@ -27,6 +27,7 @@ interface HeaderProps {
   countdown?: number;
   isRefreshing?: boolean;
   onManualRefresh?: () => void;
+  availableSlots?: number;
 }
 
 export function Header({ 
@@ -43,6 +44,7 @@ export function Header({
   countdown,
   isRefreshing,
   onManualRefresh,
+  availableSlots = 0,
 }: HeaderProps) {
   const { signOut } = useAuth();
 
@@ -114,9 +116,14 @@ export function Header({
               <FileJson className="w-4 h-4 mr-2" />
               Import JSON
             </Button>
-            <Button variant="secondary" onClick={onQuickAddUsers}>
+            <Button variant="secondary" onClick={onQuickAddUsers} className="relative">
               <Zap className="w-4 h-4 mr-2" />
               Quick Add
+              {availableSlots > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full bg-primary text-primary-foreground px-1">
+                  {availableSlots}
+                </span>
+              )}
             </Button>
             <Button onClick={onAddAdmin}>
               <Plus className="w-4 h-4 mr-2" />
