@@ -512,6 +512,116 @@ export function useAdminAccounts() {
     }
   }, [fetchAdmins]);
 
+  // Sync All Admins
+  const syncAllAdmins = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.syncAdmin(); // No adminId = sync all
+      
+      if (response.success) {
+        await fetchAdmins();
+        toast.success(
+          `Synced ${response.summary.syncedAdmins} admin(s): ${response.summary.totalMembers} members, ${response.summary.totalPendingInvites} pending invites`
+        );
+        
+        if (response.summary.failedAdmins > 0) {
+          toast.warning(`${response.summary.failedAdmins} admin(s) failed to sync`);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to sync all admins';
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchAdmins]);
+
+  // Check Token Health for all admins
+  const checkAllTokenHealth = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const results = await Promise.all(
+        accounts.map(async (account) => {
+          if (!account.accessToken) {
+            return {
+              adminId: account.id,
+              isValid: false,
+              error: 'No access token',
+              lastChecked: new Date().toISOString(),
+            };
+          }
+          return api.checkTokenHealth(account.id, account.accessToken);
+        })
+      );
+
+      // Update accounts with token health status
+      setAccounts(prev => prev.map(acc => {
+        const healthResult = results.find(r => r.adminId === acc.id);
+        if (healthResult) {
+          return {
+            ...acc,
+            tokenHealth: {
+              isValid: healthResult.isValid,
+              lastChecked: healthResult.lastChecked,
+              error: healthResult.error,
+            },
+          };
+        }
+        return acc;
+      }));
+
+      const validCount = results.filter(r => r.isValid).length;
+      const invalidCount = results.filter(r => !r.isValid).length;
+
+      if (invalidCount > 0) {
+        toast.warning(`Token Health: ${validCount} valid, ${invalidCount} invalid`);
+      } else {
+        toast.success(`All ${validCount} tokens are valid`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to check token health';
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accounts]);
+
+  // Check single admin token health
+  const checkTokenHealth = useCallback(async (accountId: string) => {
+    const account = accounts.find(acc => acc.id === accountId);
+    if (!account?.accessToken) {
+      toast.error('No access token for this admin');
+      return;
+    }
+
+    try {
+      const result = await api.checkTokenHealth(accountId, account.accessToken);
+      
+      setAccounts(prev => prev.map(acc => {
+        if (acc.id === accountId) {
+          return {
+            ...acc,
+            tokenHealth: {
+              isValid: result.isValid,
+              lastChecked: result.lastChecked,
+              error: result.error,
+            },
+          };
+        }
+        return acc;
+      }));
+
+      if (result.isValid) {
+        toast.success('Token is valid');
+      } else {
+        toast.error(`Token invalid: ${result.error}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to check token';
+      toast.error(message);
+    }
+  }, [accounts]);
+
   return {
     accounts,
     isLoading,
@@ -528,6 +638,9 @@ export function useAdminAccounts() {
     cancelInvite,
     resendInvite,
     refreshFromChatGPT,
+    syncAllAdmins,
+    checkAllTokenHealth,
+    checkTokenHealth,
     refetch: fetchAdmins,
   };
 }

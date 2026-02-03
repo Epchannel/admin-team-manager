@@ -26,6 +26,11 @@ export interface AdminAccount {
   status: 'active' | 'inactive' | 'warning';
   accessToken?: string;
   accountId?: string;
+  tokenHealth?: {
+    isValid: boolean;
+    lastChecked: string;
+    error?: string;
+  };
 }
 
 export interface DashboardStats {

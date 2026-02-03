@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MoreVertical, Users, Trash2, Edit, Zap, AlertTriangle, RefreshCw, Clock } from 'lucide-react';
+import { MoreVertical, Users, Trash2, Edit, Zap, AlertTriangle, RefreshCw, Clock, ShieldCheck, ShieldX } from 'lucide-react';
 import { AdminAccount, MAX_TEAM_MEMBERS } from '@/types/admin';
 import { TeamCapacityBar } from './TeamCapacityBar';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface AdminCardProps {
   account: AdminAccount;
@@ -24,6 +31,10 @@ interface AdminCardProps {
   onRefresh?: (id: string) => void;
   lastCheck?: string | null;
   isLoading?: boolean;
+  // Bulk selection
+  isSelected?: boolean;
+  onSelect?: (id: string, selected: boolean) => void;
+  showCheckbox?: boolean;
 }
 
 export function AdminCard({
@@ -36,6 +47,9 @@ export function AdminCard({
   onRefresh,
   lastCheck,
   isLoading,
+  isSelected,
+  onSelect,
+  showCheckbox,
 }: AdminCardProps) {
   const isOverCapacity = account.members.length > MAX_TEAM_MEMBERS;
 
@@ -55,10 +69,18 @@ export function AdminCard({
       transition={{ delay: index * 0.1, duration: 0.4 }}
       className={`glass-card rounded-xl p-5 hover:border-primary/30 transition-all duration-300 ${
         isOverCapacity ? 'border-destructive/50' : ''
-      }`}
+      } ${isSelected ? 'ring-2 ring-primary' : ''}`}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
+          {/* Bulk Selection Checkbox */}
+          {showCheckbox && onSelect && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={(checked) => onSelect(account.id, !!checked)}
+              className="mt-1"
+            />
+          )}
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
             <Users className="w-5 h-5 text-primary" />
           </div>
@@ -70,6 +92,31 @@ export function AdminCard({
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   Over Limit
                 </Badge>
+              )}
+              {/* Token Health Badge */}
+              {account.tokenHealth && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge 
+                        variant={account.tokenHealth.isValid ? 'default' : 'destructive'}
+                        className={`text-xs ${account.tokenHealth.isValid ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' : ''}`}
+                      >
+                        {account.tokenHealth.isValid ? (
+                          <ShieldCheck className="w-3 h-3" />
+                        ) : (
+                          <ShieldX className="w-3 h-3" />
+                        )}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {account.tokenHealth.isValid 
+                        ? 'Token hợp lệ' 
+                        : `Token lỗi: ${account.tokenHealth.error || 'Unknown'}`
+                      }
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             <p className="text-sm text-muted-foreground">{account.email}</p>

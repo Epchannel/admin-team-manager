@@ -1,9 +1,10 @@
-import { Bot, Plus, Download, LogOut, RefreshCw, Timer, Zap } from 'lucide-react';
+import { Bot, Plus, Download, LogOut, RefreshCw, Timer, Zap, Activity, Keyboard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Notification } from '@/types/activity';
 import { useAuth } from '@/hooks/useAuth';
+import { KEYBOARD_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 export interface TeamSlotInfo {
   teamName: string;
@@ -39,6 +45,9 @@ interface HeaderProps {
   onManualRefresh?: () => void;
   availableSlots?: number;
   teamSlots?: TeamSlotInfo[];
+  onSyncAll?: () => void;
+  onCheckHealth?: () => void;
+  isSyncing?: boolean;
 }
 
 export function Header({ 
@@ -56,6 +65,9 @@ export function Header({
   onManualRefresh,
   availableSlots = 0,
   teamSlots = [],
+  onSyncAll,
+  onCheckHealth,
+  isSyncing,
 }: HeaderProps) {
   const { signOut } = useAuth();
 
@@ -92,6 +104,76 @@ export function Header({
                 )}
               </div>
             )}
+
+            {/* Sync All Button */}
+            {onSyncAll && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onSyncAll}
+                      disabled={isSyncing}
+                    >
+                      {isSyncing ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                      )}
+                      Sync All
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Đồng bộ tất cả admin (S)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Health Check Button */}
+            {onCheckHealth && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onCheckHealth}
+                      disabled={isSyncing}
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      Health
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Kiểm tra trạng thái token</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Keyboard Shortcuts */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Keyboard className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Phím tắt</h4>
+                  <div className="space-y-1">
+                    {KEYBOARD_SHORTCUTS.map((shortcut) => (
+                      <div key={shortcut.key} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{shortcut.description}</span>
+                        <kbd className="px-2 py-0.5 text-xs bg-muted rounded">{shortcut.key}</kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <ThemeToggle />
             
