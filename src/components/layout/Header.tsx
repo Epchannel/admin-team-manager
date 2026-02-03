@@ -1,6 +1,7 @@
 import { Bot, Plus, FileJson, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Notification } from '@/types/activity';
 import {
   DropdownMenu,
@@ -47,6 +48,8 @@ export function Header({
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
+            
             <NotificationCenter
               notifications={notifications}
               unreadCount={unreadCount}
