@@ -1,12 +1,37 @@
-import { Bot, Plus, FileJson } from 'lucide-react';
+import { Bot, Plus, FileJson, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { Notification } from '@/types/activity';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   onAddAdmin: () => void;
   onImportJson: () => void;
+  onExportCSV: (type: 'admins' | 'users') => void;
+  onExportJSON: () => void;
+  notifications: Notification[];
+  unreadCount: number;
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+  onClearNotification: (id: string) => void;
 }
 
-export function Header({ onAddAdmin, onImportJson }: HeaderProps) {
+export function Header({ 
+  onAddAdmin, 
+  onImportJson,
+  onExportCSV,
+  onExportJSON,
+  notifications,
+  unreadCount,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onClearNotification,
+}: HeaderProps) {
   return (
     <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl sticky top-0 z-40">
       <div className="container mx-auto px-4 py-4">
@@ -22,6 +47,34 @@ export function Header({ onAddAdmin, onImportJson }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationCenter
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAsRead={onMarkAsRead}
+              onMarkAllAsRead={onMarkAllAsRead}
+              onClear={onClearNotification}
+            />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onExportCSV('admins')}>
+                  Export Admins (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onExportCSV('users')}>
+                  Export Users (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onExportJSON}>
+                  Export All (JSON)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button variant="outline" onClick={onImportJson}>
               <FileJson className="w-4 h-4 mr-2" />
               Import JSON

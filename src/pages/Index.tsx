@@ -1,18 +1,26 @@
 import { useState } from 'react';
-import { Users, UserCheck, AlertTriangle, Shield, Search, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { 
+  Users, UserCheck, AlertTriangle, Shield, Search, 
+  LayoutGrid, Table as TableIcon, BarChart3, Clock 
+} from 'lucide-react';
 import { useAdminAccounts } from '@/hooks/useAdminAccounts';
+import { useNotifications } from '@/hooks/useNotifications';
 import { AdminAccount } from '@/types/admin';
 import { Header } from '@/components/layout/Header';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { AdminCard } from '@/components/dashboard/AdminCard';
 import { UsersTable } from '@/components/dashboard/UsersTable';
+import { AnalyticsCharts } from '@/components/dashboard/AnalyticsCharts';
+import { ActivityLogs } from '@/components/dashboard/ActivityLogs';
+import { AdvancedFilters, FilterOptions, defaultFilters } from '@/components/dashboard/AdvancedFilters';
 import { AddAdminModal } from '@/components/modals/AddAdminModal';
 import { EditAdminModal } from '@/components/modals/EditAdminModal';
 import { ImportJsonModal } from '@/components/modals/ImportJsonModal';
 import { TeamManageModal } from '@/components/modals/TeamManageModal';
+import { exportToCSV, exportToJSON } from '@/utils/exportData';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 
 const Index = () => {
   const {
@@ -28,7 +36,17 @@ const Index = () => {
     triggerAutoDelete,
   } = useAdminAccounts();
 
+  const {
+    notifications,
+    activityLogs,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+  } = useNotifications();
+
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
@@ -36,12 +54,37 @@ const Index = () => {
 
   const stats = getStats();
 
-  const filteredAccounts = accounts.filter(
-    (acc) =>
+  // Apply filters
+  const filteredAccounts = accounts.filter((acc) => {
+    // Search filter
+    const matchesSearch =
       acc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       acc.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      acc.teamName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      acc.teamName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Status filter
+    const matchesStatus = filters.status === 'all' || acc.status === filters.status;
+
+    // Member count filter
+    const matchesMinMembers = !filters.minMembers || acc.members.length >= parseInt(filters.minMembers);
+    const matchesMaxMembers = !filters.maxMembers || acc.members.length <= parseInt(filters.maxMembers);
+
+    return matchesSearch && matchesStatus && matchesMinMembers && matchesMaxMembers;
+  });
+
+  const handleExportCSV = (type: 'admins' | 'users') => {
+    exportToCSV(accounts, type);
+    toast.success(`Exported ${type} to CSV`);
+  };
+
+  const handleExportJSON = () => {
+    exportToJSON(accounts);
+    toast.success('Exported all data to JSON');
+  };
+
+  const handleResetFilters = () => {
+    setFilters(defaultFilters);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,6 +96,13 @@ const Index = () => {
       <Header
         onAddAdmin={() => setShowAddModal(true)}
         onImportJson={() => setShowImportModal(true)}
+        onExportCSV={handleExportCSV}
+        onExportJSON={handleExportJSON}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
+        onClearNotification={clearNotification}
       />
 
       <main className="container mx-auto px-4 py-8 relative">
@@ -86,9 +136,9 @@ const Index = () => {
           />
         </div>
 
-        {/* Tabs for Admin Cards vs Users Table */}
+        {/* Tabs */}
         <Tabs defaultValue="admins" className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <TabsList className="bg-secondary/50">
               <TabsTrigger value="admins" className="gap-2">
                 <LayoutGrid className="w-4 h-4" />
@@ -98,18 +148,33 @@ const Index = () => {
                 <TableIcon className="w-4 h-4" />
                 All Users
               </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="gap-2">
+                <Clock className="w-4 h-4" />
+                Activity
+              </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="admins" className="space-y-6">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                placeholder="Search admins, emails, or team names..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+            {/* Search & Filters */}
+            <div className="flex gap-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search admins, emails, or team names..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <AdvancedFilters 
+                filters={filters} 
+                onFiltersChange={setFilters} 
+                onReset={handleResetFilters}
               />
             </div>
 
@@ -134,8 +199,8 @@ const Index = () => {
                 <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium">No admin accounts found</h3>
                 <p className="text-muted-foreground mt-1">
-                  {searchQuery
-                    ? 'Try adjusting your search query'
+                  {searchQuery || Object.values(filters).some(v => v && v !== 'all')
+                    ? 'Try adjusting your search or filters'
                     : 'Add your first admin account to get started'}
                 </p>
               </div>
@@ -144,6 +209,14 @@ const Index = () => {
 
           <TabsContent value="users">
             <UsersTable accounts={accounts} onRemoveMember={removeMember} />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsCharts accounts={accounts} />
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <ActivityLogs logs={activityLogs} />
           </TabsContent>
         </Tabs>
       </main>
