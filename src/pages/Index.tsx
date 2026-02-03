@@ -17,7 +17,6 @@ import { ActivityLogs } from '@/components/dashboard/ActivityLogs';
 import { AdvancedFilters, FilterOptions, defaultFilters } from '@/components/dashboard/AdvancedFilters';
 import { AddAdminModal } from '@/components/modals/AddAdminModal';
 import { EditAdminModal } from '@/components/modals/EditAdminModal';
-import { ImportJsonModal } from '@/components/modals/ImportJsonModal';
 import { TeamManageModal } from '@/components/modals/TeamManageModal';
 import { QuickAddUsersModal } from '@/components/modals/QuickAddUsersModal';
 import { exportToCSV, exportToJSON } from '@/utils/exportData';
@@ -90,7 +89,6 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
   const [managingTeam, setManagingTeam] = useState<AdminAccount | null>(null);
@@ -146,7 +144,6 @@ const Index = () => {
 
       <Header
         onAddAdmin={() => setShowAddModal(true)}
-        onImportJson={() => setShowImportModal(true)}
         onQuickAddUsers={() => setShowQuickAddModal(true)}
         onExportCSV={handleExportCSV}
         onExportJSON={handleExportJSON}
@@ -293,13 +290,6 @@ const Index = () => {
         onClose={() => setEditingAccount(null)}
         onSubmit={updateAccount}
       />
-
-      <ImportJsonModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onImport={importFromJson}
-      />
-
       <TeamManageModal
         isOpen={!!managingTeam}
         account={managingTeam}
