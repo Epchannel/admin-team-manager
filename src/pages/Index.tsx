@@ -1,14 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Users, UserCheck, AlertTriangle, Shield, Search, 
-  LayoutGrid, Table as TableIcon, BarChart3, Clock 
+  LayoutGrid, Table as TableIcon, BarChart3, Clock, Trash2, Loader2
 } from 'lucide-react';
 import { useAdminAccounts } from '@/hooks/useAdminAccounts';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useCronStatus } from '@/hooks/useCronStatus';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminAccount } from '@/types/admin';
 import { Header } from '@/components/layout/Header';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { AdminCard } from '@/components/dashboard/AdminCard';
 import { UsersTable } from '@/components/dashboard/UsersTable';
@@ -21,6 +24,8 @@ import { TeamManageModal } from '@/components/modals/TeamManageModal';
 import { QuickAddUsersModal } from '@/components/modals/QuickAddUsersModal';
 import { exportToCSV, exportToJSON } from '@/utils/exportData';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
@@ -40,6 +45,8 @@ const Index = () => {
     cancelInvite,
     resendInvite,
     refreshFromChatGPT,
+    syncAllAdmins,
+    checkAllTokenHealth,
     refetch,
   } = useAdminAccounts();
 
@@ -92,6 +99,33 @@ const Index = () => {
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
   const [managingTeam, setManagingTeam] = useState<AdminAccount | null>(null);
+  const [activeTab, setActiveTab] = useState('admins');
+  
+  // Bulk selection state
+  const [selectedAdmins, setSelectedAdmins] = useState<Set<string>>(new Set());
+  const [showBulkMode, setShowBulkMode] = useState(false);
+
+  // Mobile detection
+  const isMobile = useIsMobile();
+
+  // Search input ref for keyboard shortcut focus
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onSyncAll: syncAllAdmins,
+    onAddAdmin: () => setShowAddModal(true),
+    onSearch: () => searchInputRef.current?.focus(),
+    onQuickAdd: () => setShowQuickAddModal(true),
+    onEscape: () => {
+      setEditingAccount(null);
+      setManagingTeam(null);
+      setShowAddModal(false);
+      setShowQuickAddModal(false);
+      setShowBulkMode(false);
+      setSelectedAdmins(new Set());
+    },
+  });
 
   const stats = getStats();
 
@@ -135,6 +169,45 @@ const Index = () => {
     setFilters(defaultFilters);
   };
 
+  // Bulk selection handlers
+  const handleSelectAdmin = useCallback((id: string, selected: boolean) => {
+    setSelectedAdmins(prev => {
+      const next = new Set(prev);
+      if (selected) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedAdmins.size === filteredAccounts.length) {
+      setSelectedAdmins(new Set());
+    } else {
+      setSelectedAdmins(new Set(filteredAccounts.map(a => a.id)));
+    }
+  }, [filteredAccounts, selectedAdmins.size]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedAdmins.size === 0) return;
+    
+    const confirmDelete = window.confirm(
+      `Bạn có chắc chắn muốn xoá ${selectedAdmins.size} admin đã chọn?`
+    );
+    
+    if (!confirmDelete) return;
+
+    for (const id of selectedAdmins) {
+      await deleteAccount(id);
+    }
+    
+    setSelectedAdmins(new Set());
+    setShowBulkMode(false);
+    toast.success(`Đã xoá ${selectedAdmins.size} admin`);
+  }, [selectedAdmins, deleteAccount]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Background Glow */}
@@ -157,6 +230,9 @@ const Index = () => {
         onManualRefresh={manualRefresh}
         availableSlots={availableSlots}
         teamSlots={teamSlots}
+        onSyncAll={syncAllAdmins}
+        onCheckHealth={checkAllTokenHealth}
+        isSyncing={isLoading}
       />
 
       <main className="container mx-auto px-4 py-8 relative">
@@ -191,8 +267,9 @@ const Index = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="admins" className="space-y-6">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Hide TabsList on mobile - use MobileNav instead */}
+          <div className="hidden md:flex items-center justify-between gap-4 flex-wrap">
             <TabsList className="bg-secondary/50">
               <TabsTrigger value="admins" className="gap-2">
                 <LayoutGrid className="w-4 h-4" />
@@ -214,12 +291,13 @@ const Index = () => {
           </div>
 
           <TabsContent value="admins" className="space-y-6">
-            {/* Search & Filters */}
-            <div className="flex gap-4 flex-wrap">
+            {/* Search & Filters & Bulk Actions */}
+            <div className="flex gap-4 flex-wrap items-center">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  placeholder="Search admins, emails, or team names..."
+                  ref={searchInputRef}
+                  placeholder="Search admins, emails, or team names... (press /)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -230,7 +308,53 @@ const Index = () => {
                 onFiltersChange={setFilters} 
                 onReset={handleResetFilters}
               />
+              
+              {/* Bulk Mode Toggle */}
+              <Button
+                variant={showBulkMode ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setShowBulkMode(!showBulkMode);
+                  if (showBulkMode) setSelectedAdmins(new Set());
+                }}
+              >
+                {showBulkMode ? 'Cancel' : 'Bulk Select'}
+              </Button>
             </div>
+
+            {/* Bulk Actions Bar */}
+            {showBulkMode && (
+              <div className="flex items-center gap-4 p-3 bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedAdmins.size === filteredAccounts.length && filteredAccounts.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                  <span className="text-sm">
+                    {selectedAdmins.size > 0 
+                      ? `Đã chọn ${selectedAdmins.size} admin`
+                      : 'Chọn tất cả'
+                    }
+                  </span>
+                </div>
+                
+                {selectedAdmins.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-2" />
+                    )}
+                    Xoá {selectedAdmins.size} admin
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* Admin Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -246,6 +370,9 @@ const Index = () => {
                   onRefresh={refreshFromChatGPT}
                   lastCheck={getLastCheckForAdmin(account.id)}
                   isLoading={isLoading}
+                  showCheckbox={showBulkMode}
+                  isSelected={selectedAdmins.has(account.id)}
+                  onSelect={handleSelectAdmin}
                 />
               ))}
             </div>
@@ -309,6 +436,18 @@ const Index = () => {
         onClose={() => setShowQuickAddModal(false)}
         onSuccess={refetch}
       />
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <MobileNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onAddAdmin={() => setShowAddModal(true)}
+        />
+      )}
+
+      {/* Add bottom padding on mobile to account for nav */}
+      {isMobile && <div className="h-20" />}
     </div>
   );
 };

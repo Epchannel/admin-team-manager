@@ -219,6 +219,37 @@ export const checkAccountStatus = (accessToken: string) =>
     }
   );
 
+// Token Health Check - Verify if access token is still valid
+export interface TokenHealthResult {
+  adminId: string;
+  email: string;
+  isValid: boolean;
+  error?: string;
+  lastChecked: string;
+}
+
+export const checkTokenHealth = async (adminId: string, accessToken: string): Promise<TokenHealthResult> => {
+  try {
+    await apiFetch<ApiResponse<unknown>>('/api/proxy/accounts/check', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return {
+      adminId,
+      email: '',
+      isValid: true,
+      lastChecked: new Date().toISOString(),
+    };
+  } catch (error) {
+    return {
+      adminId,
+      email: '',
+      isValid: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      lastChecked: new Date().toISOString(),
+    };
+  }
+};
+
 // Cron Job API
 export const getCronStatus = () =>
   apiFetch<CronStatusResponse>('/api/cron-status');
