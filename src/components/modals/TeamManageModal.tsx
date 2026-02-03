@@ -24,6 +24,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface TeamManageModalProps {
   isOpen: boolean;
@@ -63,6 +73,7 @@ export function TeamManageModal({
   });
 
   const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
 
   if (!account) return null;
 
@@ -81,6 +92,14 @@ export function TeamManageModal({
       onSendInvite(account.id, newInvite);
       setNewInvite({ email: '', name: '', role: 'member' });
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!memberToDelete) return;
+    setDeletingMemberId(memberToDelete.id);
+    await onRemoveMember(account.id, memberToDelete.id);
+    setDeletingMemberId(null);
+    setMemberToDelete(null);
   };
 
   return (
@@ -267,7 +286,7 @@ export function TeamManageModal({
                             <TableCell className="text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {format(new Date(member.addedAt), 'dd/MM/yyyy HH:mm')}
+                                {format(new Date(member.addedAt), 'HH:mm - dd/MM/yyyy')}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -275,11 +294,7 @@ export function TeamManageModal({
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={async () => {
-                                  setDeletingMemberId(member.id);
-                                  await onRemoveMember(account.id, member.id);
-                                  setDeletingMemberId(null);
-                                }}
+                                onClick={() => setMemberToDelete(member)}
                                 disabled={deletingMemberId === member.id || isLoading}
                               >
                                 {deletingMemberId === member.id ? (
@@ -413,7 +428,7 @@ export function TeamManageModal({
                             <TableCell className="text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {format(new Date(invite.invitedAt), 'dd/MM/yyyy HH:mm')}
+                                {format(new Date(invite.invitedAt), 'HH:mm - dd/MM/yyyy')}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -464,6 +479,43 @@ export function TeamManageModal({
           </motion.div>
         </motion.div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Xác nhận xoá thành viên
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xoá <span className="font-semibold text-foreground">{memberToDelete?.name}</span> ({memberToDelete?.email}) khỏi team không? 
+              <br />
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!deletingMemberId}>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={!!deletingMemberId}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingMemberId ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xoá...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Xoá thành viên
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AnimatePresence>
   );
 }
