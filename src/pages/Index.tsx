@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Users, UserCheck, AlertTriangle, Shield, Search, 
+import {
+  Users, UserCheck, AlertTriangle, Shield, Search,
   LayoutGrid, Table as TableIcon, BarChart3, Clock, Trash2, Loader2
 } from 'lucide-react';
 import { useAdminAccounts } from '@/hooks/useAdminAccounts';
@@ -90,7 +90,7 @@ const Index = () => {
     if (prevAccountsRef.current && prevAccountsRef.current !== currentHash) {
       toast.info(t('notification.dataUpdated'));
     }
-    
+
     prevAccountsRef.current = currentHash;
   }, [accounts, t]);
 
@@ -101,7 +101,7 @@ const Index = () => {
   const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
   const [managingTeam, setManagingTeam] = useState<AdminAccount | null>(null);
   const [activeTab, setActiveTab] = useState('admins');
-  
+
   // Bulk selection state
   const [selectedAdmins, setSelectedAdmins] = useState<Set<string>>(new Set());
   const [showBulkMode, setShowBulkMode] = useState(false);
@@ -193,21 +193,59 @@ const Index = () => {
 
   const handleBulkDelete = useCallback(async () => {
     if (selectedAdmins.size === 0) return;
-    
+
     const confirmDelete = window.confirm(
       t('search.delete') + ` ${selectedAdmins.size} ${t('search.admins')}?`
     );
-    
+
     if (!confirmDelete) return;
 
     for (const id of selectedAdmins) {
       await deleteAccount(id);
     }
-    
+
     setSelectedAdmins(new Set());
     setShowBulkMode(false);
     toast.success(`${t('search.delete')} ${selectedAdmins.size} ${t('search.admins')}`);
   }, [selectedAdmins, deleteAccount, t]);
+
+  // Show loading skeleton on initial load
+  if (isLoading && accounts.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Background Glow */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 blur-[120px] rounded-full" />
+        </div>
+
+        {/* Loading Content */}
+        <div className="flex flex-col items-center justify-center min-h-screen gap-6">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-primary/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-primary rounded-full animate-spin" />
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-semibold text-foreground">Đang tải dữ liệu...</h2>
+            <p className="text-sm text-muted-foreground">Vui lòng đợi trong giây lát</p>
+          </div>
+
+          {/* Skeleton Cards Preview */}
+          <div className="container mx-auto px-4 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-24 bg-secondary/50 rounded-xl animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-48 bg-secondary/50 rounded-xl animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -307,12 +345,12 @@ const Index = () => {
                   className="pl-10"
                 />
               </div>
-              <AdvancedFilters 
-                filters={filters} 
-                onFiltersChange={setFilters} 
+              <AdvancedFilters
+                filters={filters}
+                onFiltersChange={setFilters}
                 onReset={handleResetFilters}
               />
-              
+
               {/* Bulk Mode Toggle */}
               <Button
                 variant={showBulkMode ? 'secondary' : 'outline'}
@@ -335,13 +373,13 @@ const Index = () => {
                     onCheckedChange={handleSelectAll}
                   />
                   <span className="text-sm">
-                    {selectedAdmins.size > 0 
+                    {selectedAdmins.size > 0
                       ? `${t('search.selected')} ${selectedAdmins.size} ${t('search.admins')}`
                       : t('search.selectAll')
                     }
                   </span>
                 </div>
-                
+
                 {selectedAdmins.size > 0 && (
                   <Button
                     variant="destructive"
@@ -362,26 +400,26 @@ const Index = () => {
 
             {/* Admin Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAccounts.map((account, index) => (
-              <AdminCard
-                key={account.id}
-                account={account}
-                index={index}
-                onEdit={setEditingAccount}
-                onDelete={deleteAccount}
-                onManageTeam={setManagingTeam}
-                onAutoDelete={triggerAutoDelete}
-                onRefresh={async (id) => {
-                  await refreshFromChatGPT(id);
-                  await refreshLogs();
-                }}
-                lastCheck={getLastCheckForAdmin(account.id)}
-                isLoading={isLoading}
-                showCheckbox={showBulkMode}
-                isSelected={selectedAdmins.has(account.id)}
-                onSelect={handleSelectAdmin}
-              />
-            ))}
+              {filteredAccounts.map((account, index) => (
+                <AdminCard
+                  key={account.id}
+                  account={account}
+                  index={index}
+                  onEdit={setEditingAccount}
+                  onDelete={deleteAccount}
+                  onManageTeam={setManagingTeam}
+                  onAutoDelete={triggerAutoDelete}
+                  onRefresh={async (id) => {
+                    await refreshFromChatGPT(id);
+                    await refreshLogs();
+                  }}
+                  lastCheck={getLastCheckForAdmin(account.id)}
+                  isLoading={isLoading}
+                  showCheckbox={showBulkMode}
+                  isSelected={selectedAdmins.has(account.id)}
+                  onSelect={handleSelectAdmin}
+                />
+              ))}
             </div>
 
             {filteredAccounts.length === 0 && (

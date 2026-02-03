@@ -2,6 +2,7 @@ import { useState, createContext, useContext, ReactNode, useEffect } from 'react
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  signIn: () => void;
   signOut: () => void;
 }
 
@@ -21,6 +22,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  const signIn = () => {
+    sessionStorage.setItem('authenticated', 'true');
+    setIsAuthenticated(true);
+  };
+
   const signOut = () => {
     sessionStorage.removeItem('authenticated');
     setIsAuthenticated(false);
@@ -28,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, signOut }}>
+    <AuthContext.Provider value={{ isAuthenticated, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

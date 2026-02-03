@@ -7,17 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 const ACCESS_KEY = 'linhtool';
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { isAuthenticated, signIn } = useAuth();
   const [key, setKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Check if already authenticated
-  const isAuthenticated = sessionStorage.getItem('authenticated') === 'true';
   if (isAuthenticated) {
     navigate('/');
     return null;
@@ -25,25 +26,25 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!key.trim()) {
       toast.error('Vui lòng nhập access key');
       return;
     }
 
     setIsLoading(true);
-    
+
     // Simulate a brief delay for UX
     await new Promise(resolve => setTimeout(resolve, 500));
 
     if (key === ACCESS_KEY) {
-      sessionStorage.setItem('authenticated', 'true');
+      signIn();
       toast.success('Đăng nhập thành công!');
       navigate('/');
     } else {
       toast.error('Access key không đúng');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -62,7 +63,7 @@ export default function Auth() {
       >
         <Card className="glass-card border-primary/20">
           <CardHeader className="text-center">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring" }}
