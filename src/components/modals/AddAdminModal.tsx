@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { X, FileJson, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -43,8 +42,6 @@ const sampleJson = `{
 
 export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps) {
   const [jsonData, setJsonData] = useState('');
-  const [teamName, setTeamName] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [parsedData, setParsedData] = useState<ParsedJsonData | null>(null);
 
@@ -68,10 +65,6 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
       }
       setError('');
       setParsedData(data);
-      // Auto-fill name from email if empty
-      if (!name) {
-        setName(data.user.email.split('@')[0]);
-      }
     } catch (e) {
       setError('JSON không hợp lệ. Vui lòng kiểm tra lại.');
       setParsedData(null);
@@ -113,15 +106,13 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
       setError('Vui lòng nhập JSON hợp lệ');
       return;
     }
-    if (!teamName.trim()) {
-      setError('Vui lòng nhập tên Team');
-      return;
-    }
 
+    const email = parsedData.user!.email!;
+    
     onSubmit({
-      email: parsedData.user!.email!,
-      name: name || parsedData.user!.email!.split('@')[0],
-      teamName: teamName.trim(),
+      email: email,
+      name: email.split('@')[0], // Auto-generate name from email
+      teamName: '', // Will be fetched from API after creation
       status: 'active',
       accessToken: parsedData.accessToken,
       accountId: parsedData.account!.id,
@@ -129,8 +120,6 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
 
     // Reset form
     setJsonData('');
-    setTeamName('');
-    setName('');
     setParsedData(null);
     setError('');
     onClose();
@@ -138,8 +127,6 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
 
   const handleClose = () => {
     setJsonData('');
-    setTeamName('');
-    setName('');
     setParsedData(null);
     setError('');
     onClose();
@@ -215,27 +202,9 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Admin Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Tên admin"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="teamName">Team Name *</Label>
-                  <Input
-                    id="teamName"
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    placeholder="Tên team"
-                    required
-                  />
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                * Thông tin admin sẽ được tự động lấy từ API sau khi thêm thành công.
+              </p>
 
               <div className="flex gap-3 pt-4">
                 <Button type="button" variant="outline" className="flex-1" onClick={handleClose}>
@@ -244,7 +213,7 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
                 <Button 
                   type="submit" 
                   className="flex-1"
-                  disabled={!parsedData || !teamName.trim()}
+                  disabled={!parsedData}
                 >
                   Add Account
                 </Button>
