@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAdminAccounts } from '@/hooks/useAdminAccounts';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useCronStatus } from '@/hooks/useCronStatus';
 import { AdminAccount } from '@/types/admin';
 import { Header } from '@/components/layout/Header';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -37,7 +38,10 @@ const Index = () => {
     sendInvite,
     cancelInvite,
     resendInvite,
+    refreshFromChatGPT,
   } = useAdminAccounts();
+
+  const { getLastCheckForAdmin } = useCronStatus();
 
   const {
     notifications,
@@ -192,6 +196,8 @@ const Index = () => {
                   onDelete={deleteAccount}
                   onManageTeam={setManagingTeam}
                   onAutoDelete={triggerAutoDelete}
+                  onRefresh={refreshFromChatGPT}
+                  lastCheck={getLastCheckForAdmin(account.id)}
                   isLoading={isLoading}
                 />
               ))}
