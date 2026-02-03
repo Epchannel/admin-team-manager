@@ -25,6 +25,7 @@ export interface AdminAccount {
   createdAt: string;
   status: 'active' | 'inactive' | 'warning';
   accessToken?: string;
+  accountId?: string;
 }
 
 export interface DashboardStats {

@@ -20,6 +20,8 @@ interface AddAdminModalProps {
     name: string;
     teamName: string;
     status: 'active' | 'inactive';
+    accessToken?: string;
+    accountId?: string;
   }) => void;
 }
 
@@ -29,12 +31,14 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
     name: '',
     teamName: '',
     status: 'active' as 'active' | 'inactive',
+    accessToken: '',
+    accountId: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({ email: '', name: '', teamName: '', status: 'active' });
+    setFormData({ email: '', name: '', teamName: '', status: 'active', accessToken: '', accountId: '' });
     onClose();
   };
 
@@ -113,6 +117,27 @@ export function AddAdminModal({ isOpen, onClose, onSubmit }: AddAdminModalProps)
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountId">Account ID (ChatGPT)</Label>
+                <Input
+                  id="accountId"
+                  value={formData.accountId}
+                  onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
+                  placeholder="ChatGPT Account ID"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accessToken">Access Token</Label>
+                <Input
+                  id="accessToken"
+                  type="password"
+                  value={formData.accessToken}
+                  onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
+                  placeholder="ChatGPT Access Token"
+                />
               </div>
 
               <div className="flex gap-3 pt-4">
